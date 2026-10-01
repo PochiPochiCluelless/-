@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>反射の文学</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e8ecf2;--bg2:#f7f9fc;--ink:#171d2c;--sub:#5d667a;--grid:#b9c1d1;
+  --beam:#2548d8;--beam-glow:rgba(37,72,216,.45);--mirror:#4a5876;--mirror-hi:#ffffff;
+  --pill:#f7f9fc;--pill-line:#7d879c;--lit-text:#0c1020;--bad:#c93a5c;--bad-text:#fff;
+  --lit-l:56%;--panel:rgba(255,255,255,.7);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#080b16;--bg2:#121830;--ink:#e9edf8;--sub:#8a93ad;--grid:#232b44;
+    --beam:#e6f2ff;--beam-glow:rgba(150,200,255,.7);--mirror:#9db4d9;--mirror-hi:#ffffff;
+    --pill:#10162a;--pill-line:#44506f;--lit-text:#0a0e1c;--bad:#ff7a92;--bad-text:#1a0a10;
+    --lit-l:68%;--panel:rgba(18,24,48,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080b16;--bg2:#121830;--ink:#e9edf8;--sub:#8a93ad;--grid:#232b44;
+  --beam:#e6f2ff;--beam-glow:rgba(150,200,255,.7);--mirror:#9db4d9;--mirror-hi:#ffffff;
+  --pill:#10162a;--pill-line:#44506f;--lit-text:#0a0e1c;--bad:#ff7a92;--bad-text:#1a0a10;
+  --lit-l:68%;--panel:rgba(18,24,48,.7);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;min-height:100vh;color:var(--ink);background:var(--bg);
+  background-image:radial-gradient(120% 60% at 50% 0%,var(--bg2),transparent 70%);
+  font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  line-height:1.8;-webkit-tap-highlight-color:transparent;
+}
+main{max-width:600px;margin:0 auto;padding:28px 16px 56px}
+header{text-align:center;margin-bottom:6px}
+h1{
+  position:relative;margin:0;font-weight:800;font-size:clamp(34px,9vw,52px);
+  letter-spacing:.28em;padding-left:.28em;line-height:1.2;
+}
+h1::after{
+  content:attr(data-t);position:absolute;left:0;right:0;top:100%;
+  transform:scaleY(-1);transform-origin:50% 0;opacity:.3;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 38%,#000 100%);
+  mask-image:linear-gradient(to bottom,transparent 38%,#000 100%);
+  filter:blur(.6px);
+}
+.sub{margin:44px 0 0;color:var(--sub);font-size:14px;letter-spacing:.08em}
+nav{display:flex;justify-content:center;gap:10px;margin:18px 0 6px}
+nav button{
+  width:34px;height:34px;border-radius:50%;border:1px solid var(--pill-line);background:transparent;
+  color:var(--sub);font:inherit;font-size:14px;cursor:pointer;
+}
+nav button.cur{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav button.done{border-color:var(--beam);color:var(--ink)}
+nav button:disabled{opacity:.3;cursor:default}
+button:focus-visible,.mir:focus-visible{outline:2px solid var(--beam);outline-offset:3px}
+#lvTitle{text-align:center;margin:10px 0 2px;font-size:15px;color:var(--sub);letter-spacing:.2em}
+.rule{text-align:center;font-size:13px;color:var(--sub);margin:0 0 12px}
+.board{
+  border:1px solid var(--grid);border-radius:6px;padding:6px;
+  background:var(--panel);
+}
+svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.gdot{fill:var(--grid)}
+.beam{fill:none;stroke:var(--beam);stroke-width:3;stroke-linejoin:round;stroke-linecap:round;
+  filter:drop-shadow(0 0 5px var(--beam-glow)) drop-shadow(0 0 12px var(--beam-glow))}
+.flow{fill:none;stroke:var(--bg2);stroke-width:1.4;stroke-linecap:round;stroke-dasharray:2 22;opacity:.9;
+  animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-24}}
+.mir{cursor:pointer;outline:none}
+.mrot{transform-origin:0 0;transition:transform .38s cubic-bezier(.3,1.5,.5,1)}
+.mline{stroke:var(--mirror);stroke-width:6;stroke-linecap:round}
+.mhi{stroke:var(--mirror-hi);stroke-width:1.6;stroke-linecap:round;opacity:.85}
+.mir:hover .mline{stroke-width:7.5}
+.w rect{fill:var(--pill);stroke:var(--pill-line);stroke-width:1;transition:fill .25s,stroke .25s}
+.w text{fill:var(--ink);font-family:inherit;font-weight:600;text-anchor:middle;dominant-baseline:central;transition:fill .25s}
+.w.lit rect{fill:var(--wc);stroke:var(--wc)}
+.w.lit text{fill:var(--lit-text)}
+.w.wrong rect{fill:var(--bad);stroke:var(--bad)}
+.w.wrong text{fill:var(--bad-text)}
+.w .badge{fill:var(--ink);font-size:10px;font-weight:600;opacity:0;transition:opacity .2s}
+.w.lit .badge,.w.wrong .badge{opacity:.8}
+.w.pop g.in{animation:pop .45s ease-out}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+.w.hint rect{stroke:var(--beam);stroke-width:2.4;animation:hint .7s ease-in-out 4 alternate}
+@keyframes hint{from{opacity:1}to{opacity:.35}}
+.lamp{fill:var(--ink)}
+.lamp-ring{fill:none;stroke:var(--beam);stroke-width:1.5}
+#line{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px 4px;margin:18px 0 4px;min-height:46px;
+  font-size:19px;font-weight:600;letter-spacing:.04em;
+}
+#line span{padding:1px 8px;border-bottom:2px solid var(--grid);color:var(--sub)}
+#line span.ok{color:var(--ink);border-color:var(--wc)}
+#line span.bad{color:var(--bad);border-color:var(--bad)}
+#line span.blank{border-color:var(--grid);color:var(--grid)}
+.ctrl{display:flex;justify-content:center;gap:12px;margin:14px 0}
+.btn{
+  font:inherit;font-size:14px;letter-spacing:.12em;padding:8px 20px;border-radius:999px;
+  border:1px solid var(--pill-line);background:transparent;color:var(--ink);cursor:pointer;
+}
+.btn:hover{border-color:var(--ink)}
+.btn.main{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#clear{text-align:center;margin-top:10px}
+#clear p{margin:6px 0 14px;font-size:clamp(20px,5.4vw,26px);font-weight:800;letter-spacing:.1em}
+#clear.show p{animation:rise .9s ease-out both}
+@keyframes rise{from{opacity:0;letter-spacing:.35em}to{opacity:1;letter-spacing:.1em}}
+#ending{text-align:center;padding-top:20px}
+#ending p{margin:0 0 .5em;font-size:clamp(17px,4.6vw,22px);font-weight:600;letter-spacing:.1em;opacity:0;animation:fade 1.6s ease-out forwards}
+#ending p.last{margin-top:1.6em;font-size:clamp(22px,6vw,30px);font-weight:800}
+@keyframes fade{to{opacity:1}}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: reduce){
+  .flow,.w.hint rect,.w.pop g.in,#clear.show p{animation:none}
+  .mrot{transition:none}
+  #ending p{animation-duration:.01s;animation-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 data-t="反射の文学">反射の文学</h1>
+    <p class="sub">鏡を傾け、光を言葉に当てる。当たった順に、文が生まれる。</p>
+  </header>
+  <nav id="dots" aria-label="ステージ"></nav>
+  <section id="game">
+    <div id="lvTitle"></div>
+    <p class="rule">鏡をタップすると、傾きが変わります。</p>
+    <div class="board"><svg id="svg" role="img" aria-label="鏡と言葉の盤面"></svg></div>
+    <div id="line" aria-live="polite"></div>
+    <div class="ctrl">
+      <button class="btn" id="hint" type="button">ヒント</button>
+      <button class="btn" id="reset" type="button">鏡を戻す</button>
+    </div>
+    <div id="clear" hidden>
+      <p id="clearLine"></p>
+      <button class="btn main" id="next" type="button">次の鏡へ</button>
+    </div>
+  </section>
+  <section id="ending" hidden></section>
+</main>
+<script>
+const LEVELS=[{"size":5,"start":2,"mirrors":[{"r":2,"c":3},{"r":4,"c":3},{"r":2,"c":4},{"r":0,"c":2}],"words":[{"r":2,"c":0,"t":"光が"},{"r":2,"c":1,"t":"言葉に"},{"r":4,"c":4,"t":"なる"},{"r":3,"c":2,"t":"影"}],"init":[1,0,1,1],"target":["光が","言葉に","なる"],"line":"光が言葉になる。","title":"光"},{"size":6,"start":5,"mirrors":[{"r":5,"c":1},{"r":2,"c":1},{"r":2,"c":3},{"r":4,"c":3},{"r":4,"c":5},{"r":4,"c":2},{"r":1,"c":2},{"r":3,"c":0}],"words":[{"r":5,"c":0,"t":"夜は"},{"r":4,"c":1,"t":"誰かの"},{"r":3,"c":1,"t":"朝に"},{"r":3,"c":5,"t":"なって"},{"r":2,"c":5,"t":"返る"},{"r":5,"c":2,"t":"沈黙"},{"r":2,"c":0,"t":"窓"}],"init":[1,0,0,0,1,1,1,1],"target":["夜は","誰かの","朝に","なって","返る"],"line":"夜は誰かの朝になって返る。","title":"夜"},{"size":6,"start":4,"mirrors":[{"r":4,"c":2},{"r":1,"c":2},{"r":1,"c":0},{"r":1,"c":5},{"r":0,"c":3},{"r":0,"c":5},{"r":2,"c":5}],"words":[{"r":4,"c":1,"t":"詩は"},{"r":3,"c":2,"t":"透過し"},{"r":2,"c":2,"t":"物語は"},{"r":1,"c":1,"t":"屈折し"},{"r":0,"c":1,"t":"余白"},{"r":5,"c":0,"t":"鏡"}],"init":[1,1,0,1,0,1,0],"target":["詩は","透過し","物語は","屈折し"],"line":"詩は透過し、物語は屈折し、","title":"透過と屈折"},{"size":7,"start":2,"mirrors":[{"r":2,"c":2},{"r":6,"c":2},{"r":6,"c":6},{"r":3,"c":6},{"r":0,"c":1},{"r":1,"c":0},{"r":0,"c":5},{"r":3,"c":5},{"r":4,"c":4}],"words":[{"r":2,"c":1,"t":"意識は"},{"r":3,"c":2,"t":"境界を"},{"r":4,"c":2,"t":"滑り"},{"r":5,"c":2,"t":"それを"},{"r":6,"c":5,"t":"反射と"},{"r":5,"c":6,"t":"呼ぶ"},{"r":3,"c":4,"t":"沈黙"},{"r":5,"c":0,"t":"風"},{"r":2,"c":6,"t":"水面"}],"init":[0,0,1,0,0,0,1,1,0],"target":["意識は","境界を","滑り","それを","反射と","呼ぶ"],"line":"意識は境界を滑り、それを反射と呼ぶ。","title":"境界"},{"size":8,"start":4,"mirrors":[{"r":4,"c":1},{"r":2,"c":1},{"r":2,"c":4},{"r":4,"c":4},{"r":0,"c":2},{"r":7,"c":3},{"r":2,"c":7},{"r":1,"c":1},{"r":3,"c":7},{"r":7,"c":7},{"r":5,"c":3}],"words":[{"r":3,"c":1,"t":"世界が"},{"r":2,"c":2,"t":"世界を"},{"r":2,"c":3,"t":"見返す"},{"r":4,"c":5,"t":"瞬間"},{"r":4,"c":6,"t":"それが"},{"r":4,"c":7,"t":"文学"},{"r":0,"c":6,"t":"影"},{"r":2,"c":0,"t":"余白"},{"r":0,"c":1,"t":"透明"},{"r":3,"c":6,"t":"残像"}],"init":[1,1,0,0,0,0,0,1,1,0,1],"target":["世界が","世界を","見返す","瞬間","それが","文学"],"line":"世界が世界を見返す瞬間、それが文学。","title":"世界"}];
+const DIRS={R:[0,1],L:[0,-1],U:[-1,0],D:[1,0]};
+const SLASH={R:'U',U:'R',L:'D',D:'L'};
+const BACK={R:'D',D:'R',L:'U',U:'L'};
+function sim(lv,states){
+  const mm=new Map();lv.mirrors.forEach((m,i)=>mm.set(m.r+','+m.c,i));
+  const ww=new Map();lv.words.forEach((w,i)=>ww.set(w.r+','+w.c,i));
+  let r=lv.start,c=-1,d='R';const pts=[[r,-1]];const got=[];const seen=new Set();
+  while(true){
+    r+=DIRS[d][0];c+=DIRS[d][1];
+    if(r<0||c<0||r>=lv.size||c>=lv.size){pts.push([r,c]);break;}
+    const key=r+','+c+','+d;if(seen.has(key))break;seen.add(key);
+    pts.push([r,c]);
+    const k=r+','+c;
+    if(ww.has(k)){const i=ww.get(k);if(!got.includes(i))got.push(i);}
+    if(mm.has(k))d=(states[mm.get(k)]===0?SLASH:BACK)[d];
+  }
+  return {pts,got};
+}
+
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const svg=$('svg');
+const W=560;
+let cur=0,cell=0,states=[],angles=[],solved=false,prevGot=[],unlocked=0;
+let beamEl,flowEl,mirEls=[],wordEls=[];
+try{unlocked=Math.min(LEVELS.length-1,parseInt(localStorage.getItem('hansha_unlocked')||'0',10)||0);}catch(e){}
+
+function el(tag,attrs,parent){
+  const e=document.createElementNS(NS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]);
+  if(parent)parent.appendChild(e);
+  return e;
+}
+function hue(i,n){return Math.round(i*(n>1?290/(n-1):0)+8);}
+
+function buildDots(){
+  const nav=$('dots');nav.innerHTML='';
+  LEVELS.forEach((lv,i)=>{
+    const b=document.createElement('button');
+    b.type='button';b.textContent=['一','二','三','四','五'][i];
+    b.setAttribute('aria-label','第'+(i+1)+'の鏡');
+    if(i===cur)b.className='cur';else if(i<unlocked)b.className='done';
+    if(i>unlocked)b.disabled=true;
+    b.onclick=()=>{cur=i;showGame();};
+    nav.appendChild(b);
+  });
+}
+
+function build(){
+  const lv=LEVELS[cur],S=lv.size;
+  cell=W/S;
+  states=lv.init.slice();
+  angles=states.map(s=>s===0?-45:45);
+  solved=false;prevGot=[];
+  svg.innerHTML='';
+  svg.setAttribute('viewBox',`-34 -14 ${W+68} ${W+28}`);
+  const gGrid=el('g',{},svg);
+  for(let r=0;r<S;r++)for(let c=0;c<S;c++)
+    el('circle',{cx:(c+.5)*cell,cy:(r+.5)*cell,r:1.8,class:'gdot'},gGrid);
+  flowEl=null;
+  beamEl=el('polyline',{class:'beam'},svg);
+  flowEl=el('polyline',{class:'flow'},svg);
+  // emitter
+  const ey=(lv.start+.5)*cell;
+  el('circle',{cx:-18,cy:ey,r:9,class:'lamp-ring'},svg);
+  el('circle',{cx:-18,cy:ey,r:4.5,class:'lamp'},svg);
+  // mirrors
+  mirEls=[];
+  const L=cell*.9;
+  lv.mirrors.forEach((m,i)=>{
+    const g=el('g',{class:'mir',transform:`translate(${(m.c+.5)*cell},${(m.r+.5)*cell})`,tabindex:0,role:'button','aria-label':'鏡'},svg);
+    const rot=el('g',{class:'mrot'},g);
+    rot.style.transform=`rotate(${angles[i]}deg)`;
+    el('line',{x1:-L/2,y1:0,x2:L/2,y2:0,class:'mline'},rot);
+    el('line',{x1:-L/2+4,y1:-1.6,x2:L/2-4,y2:-1.6,class:'mhi'},rot);
+    el('rect',{x:-cell/2,y:-cell/2,width:cell,height:cell,fill:'transparent'},g);
+    const tog=()=>toggle(i);
+    g.addEventListener('click',tog);
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog();}});
+    mirEls.push(rot);
+  });
+  // words
+  wordEls=[];
+  const f=Math.min(22,(cell-22)/3);
+  lv.words.forEach((w,i)=>{
+    const g=el('g',{class:'w',transform:`translate(${(w.c+.5)*cell},${(w.r+.5)*cell})`},svg);
+    const inner=el('g',{class:'in'},g);
+    inner.style.transformOrigin='0 0';
+    const wd=Math.max(34,w.t.length*f+16),h=f+14;
+    el('rect',{x:-wd/2,y:-h/2,width:wd,height:h,rx:h/2},inner);
+    const t=el('text',{x:0,y:1,'font-size':f},inner);t.textContent=w.t;
+    const b=el('text',{x:-wd/2+2,y:-h/2-3,class:'badge'},g);b.textContent='';
+    wordEls.push(g);
+  });
+  $('lvTitle').textContent='第'+['一','二','三','四','五'][cur]+'の鏡　'+lv.title;
+  $('clear').hidden=true;$('clear').classList.remove('show');
+  buildDots();
+  update();
+}
+
+function toggle(i){
+  if(solved)return;
+  states[i]^=1;angles[i]+=90;
+  mirEls[i].style.transform=`rotate(${angles[i]}deg)`;
+  update();
+}
+
+function update(){
+  const lv=LEVELS[cur],S=lv.size,n=lv.target.length;
+  const res=sim(lv,states);
+  // beam
+  const pts=res.pts.map((p,i)=>{
+    let x=(p[1]+.5)*cell,y=(p[0]+.5)*cell;
+    if(p[1]<0)x=-18;if(p[1]>=S)x=W+16;if(p[0]<0)y=-10;if(p[0]>=S)y=W+10;
+    return x+','+y;
+  }).join(' ');
+  beamEl.setAttribute('points',pts);
+  flowEl.setAttribute('points',pts);
+  // words
+  const gotSet=new Set(res.got);
+  const orderOf=new Map();res.got.forEach((wi,k)=>orderOf.set(wi,k));
+  wordEls.forEach((g,wi)=>{
+    g.classList.remove('lit','wrong','hint');
+    const badge=g.querySelector('.badge');badge.textContent='';
+    if(gotSet.has(wi)){
+      const k=orderOf.get(wi);
+      const ok=lv.words[wi].t===lv.target[k];
+      g.classList.add(ok?'lit':'wrong');
+      if(ok)g.style.setProperty('--wc',`hsl(${hue(k,n)} 82% var(--lit-l))`);
+      badge.textContent=k+1;
+      if(!prevGot.includes(wi)){g.classList.remove('pop');void g.getBBox();g.classList.add('pop');}
+    }else g.classList.remove('pop');
+  });
+  prevGot=res.got.slice();
+  // sentence line
+  const line=$('line');line.innerHTML='';
+  const total=Math.max(n,res.got.length);
+  for(let k=0;k<total;k++){
+    const s=document.createElement('span');
+    if(k<res.got.length){
+      const t=lv.words[res.got[k]].t,ok=t===lv.target[k];
+      s.textContent=t;s.className=ok?'ok':'bad';
+      if(ok)s.style.setProperty('--wc',`hsl(${hue(k,n)} 82% var(--lit-l))`);
+    }else{s.textContent='◇';s.className='blank';}
+    line.appendChild(s);
+  }
+  // solved?
+  if(!solved&&res.got.length===n&&res.got.every((wi,k)=>lv.words[wi].t===lv.target[k])){
+    solved=true;
+    try{if(cur+1>unlocked){unlocked=cur+1;localStorage.setItem('hansha_unlocked',String(unlocked));}}catch(e){}
+    setTimeout(()=>{
+      $('clearLine').textContent=lv.line;
+      $('next').textContent=cur===LEVELS.length-1?'最後の鏡へ':'次の鏡へ';
+      $('clear').hidden=false;$('clear').classList.remove('show');void $('clear').offsetWidth;$('clear').classList.add('show');
+      buildDots();
+    },650);
+  }
+}
+
+function hint(){
+  if(solved)return;
+  const lv=LEVELS[cur];
+  const res=sim(lv,states);
+  let k=0;
+  while(k<res.got.length&&lv.words[res.got[k]].t===lv.target[k])k++;
+  if(k>=lv.target.length)return;
+  const wi=lv.words.findIndex(w=>w.t===lv.target[k]);
+  const g=wordEls[wi];
+  g.classList.remove('hint');void g.getBBox();g.classList.add('hint');
+}
+
+function showGame(){
+  $('ending').hidden=true;$('game').hidden=false;
+  build();
+}
+function showEnding(){
+  $('game').hidden=true;
+  const e=$('ending');e.innerHTML='';e.hidden=false;
+  let d=0;
+  LEVELS.forEach(lv=>{
+    const p=document.createElement('p');p.textContent=lv.line;p.style.animationDelay=d+'s';d+=1.1;e.appendChild(p);
+  });
+  const p=document.createElement('p');p.className='last';p.textContent='あなたが最後の鏡である。';p.style.animationDelay=(d+.9)+'s';e.appendChild(p);
+  const b=document.createElement('button');b.className='btn main';b.type='button';b.textContent='はじめから';
+  b.style.marginTop='28px';b.style.opacity='0';b.style.animation='fade 1s ease-out forwards';b.style.animationDelay=(d+2.4)+'s';
+  b.onclick=()=>{cur=0;showGame();window.scrollTo({top:0});};
+  e.appendChild(b);
+  Array.from($('dots').children).forEach(x=>x.classList.remove('cur'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+$('hint').onclick=hint;
+$('reset').onclick=()=>{
+  if(solved)return;
+  const lv=LEVELS[cur];
+  states=lv.init.slice();angles=states.map(s=>s===0?-45:45);
+  mirEls.forEach((r,i)=>r.style.transform=`rotate(${angles[i]}deg)`);
+  update();
+};
+$('next').onclick=()=>{
+  if(cur===LEVELS.length-1){showEnding();}
+  else{cur++;showGame();}
+};
+showGame();
+</script>
+</body>
+</html>
