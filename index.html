@@ -114,6 +114,18 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:n
 #clear.show p{animation:rise .9s ease-out both}
 @keyframes sway{0%,100%{transform:rotate(-.55deg)}50%{transform:rotate(.55deg) translateY(1px)}}
 .board.sway{animation:sway 2.4s ease-in-out infinite;transform-origin:50% 60%}
+@keyframes drunkover{0%,100%{transform:rotate(-1.6deg) scale(.985)}50%{transform:rotate(1.6deg) scale(.985) translateY(2px)}}
+.board.over{animation:drunkover 3.2s ease-in-out infinite;filter:blur(1.6px) saturate(.5);pointer-events:none;transform-origin:50% 60%}
+.gauge{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 10px;font-size:13px;color:var(--sub);letter-spacing:.18em}
+#pips{display:flex;gap:6px}
+.pip{width:13px;height:17px;border:1.5px solid var(--pill-line);border-radius:2px 2px 7px 7px;position:relative;overflow:hidden;transition:border-color .3s}
+.pip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:0;background:var(--bad);transition:height .45s ease}
+.pip.full{border-color:var(--bad)}
+.pip.full::after{height:100%}
+#over{text-align:center;margin-top:10px}
+#over h2{margin:6px 0 6px;font-size:clamp(22px,6vw,30px);font-weight:800;letter-spacing:.3em;padding-left:.3em;color:var(--bad)}
+#over p{margin:0 0 16px;font-size:clamp(16px,4.4vw,20px);font-weight:600;letter-spacing:.1em;white-space:pre-line;line-height:1.9;color:var(--sub)}
+#over.show h2,#over.show p{animation:rise .9s ease-out both}
 @keyframes rise{from{opacity:0;letter-spacing:.35em}to{opacity:1;letter-spacing:.1em}}
 #ending{text-align:center;padding-top:20px}
 #ending p{margin:0 0 1.3em;font-size:clamp(16px,4.4vw,21px);font-weight:600;letter-spacing:.1em;line-height:2;white-space:pre-line;opacity:0;animation:fade 1.6s ease-out forwards}
@@ -121,7 +133,7 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:n
 @keyframes fade{to{opacity:1}}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion: reduce){
-  .flow,.w.hint rect,.w.pop g.in,#clear.show p,.board.sway{animation:none}
+  .flow,.w.hint rect,.w.pop g.in,#clear.show p,.board.sway,.board.over,#over.show h2,#over.show p,.pip::after{animation:none;transition:none}
   .mrot{transition:none}
   #ending p{animation-duration:.01s;animation-delay:0s!important}
 }
@@ -136,12 +148,19 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:n
   <nav id="dots" aria-label="ステージ"></nav>
   <section id="game">
     <div id="lvTitle"></div>
-    <p class="rule">鏡をタップすると傾きが変わる。誤った言葉に触れると、盤面が酔って揺れる。</p>
+    <p class="rule">鏡をタップすると傾きが変わる。誤った言葉に光が触れてしまうたび、酔いが進む。満ちると酔い潰れる。</p>
+    <div class="gauge" id="gauge" role="status"><span>酔い</span><div id="pips"></div></div>
     <div class="board"><svg id="svg" role="img" aria-label="鏡と言葉の盤面"></svg></div>
     <div id="line" aria-live="polite"></div>
     <div class="ctrl">
       <button class="btn" id="hint" type="button">ヒント</button>
       <button class="btn" id="reset" type="button">鏡を戻す</button>
+    </div>
+    <div id="over" hidden>
+      <h2>酔い潰れた</h2>
+      <p>もう何を飲んだかなんて
+忘れたわ</p>
+      <button class="btn main" id="retry" type="button">醒めて、やり直す</button>
     </div>
     <div id="clear" hidden>
       <p id="clearLine"></p>
@@ -151,7 +170,7 @@ svg{display:block;width:100%;height:auto;touch-action:manipulation;user-select:n
   <section id="ending" hidden></section>
 </main>
 <script>
-const LEVELS=[{"size":5,"start":3,"mirrors":[{"r":3,"c":2},{"r":1,"c":2},{"r":3,"c":3},{"r":1,"c":1}],"words":[{"r":3,"c":0,"t":"光が","k":0},{"r":3,"c":1,"t":"言葉に","k":1},{"r":2,"c":2,"t":"なる","k":2},{"r":4,"c":1,"t":"酒","k":-1}],"init":[0,1,0,0],"target":["光が","言葉に","なる"],"n":3,"line":"光が言葉になる。","title":"序"},{"size":6,"start":0,"mirrors":[{"r":0,"c":3},{"r":4,"c":3},{"r":4,"c":1},{"r":5,"c":0},{"r":5,"c":2},{"r":2,"c":4}],"words":[{"r":0,"c":1,"t":"お酒","k":0},{"r":0,"c":2,"t":"だけ","k":1},{"r":1,"c":3,"t":"信じて","k":2},{"r":3,"c":3,"t":"生きて","k":3},{"r":4,"c":2,"t":"来た","k":4},{"r":5,"c":1,"t":"のです","k":5},{"r":3,"c":2,"t":"酒","k":-1},{"r":1,"c":4,"t":"盃","k":-1}],"init":[0,0,1,0,0,0],"target":["お酒","だけ","信じて","生きて","来た","のです"],"n":6,"line":"お酒だけ\n信じて生きて来たのです","title":"短歌一　上"},{"size":6,"start":0,"mirrors":[{"r":0,"c":2},{"r":3,"c":2},{"r":3,"c":0},{"r":3,"c":5},{"r":5,"c":2},{"r":1,"c":5}],"words":[{"r":0,"c":0,"t":"いま","k":0},{"r":0,"c":1,"t":"さら","k":1},{"r":2,"c":2,"t":"何を","k":2},{"r":3,"c":1,"t":"信じ","k":3},{"r":4,"c":0,"t":"たら","k":4},{"r":5,"c":0,"t":"いいの","k":5},{"r":1,"c":4,"t":"酔い","k":-1},{"r":4,"c":5,"t":"一献","k":-1}],"init":[0,1,0,1,0,0],"target":["いま","さら","何を","信じ","たら","いいの"],"n":6,"line":"いまさら何を信じたらいいの","title":"短歌一　下"},{"size":6,"start":4,"mirrors":[{"r":4,"c":3},{"r":0,"c":3},{"r":0,"c":1},{"r":0,"c":4},{"r":3,"c":2},{"r":4,"c":4},{"r":2,"c":0}],"words":[{"r":4,"c":0,"t":"裏切","k":0},{"r":4,"c":1,"t":"りは","k":1},{"r":4,"c":2,"t":"許され","k":2},{"r":3,"c":3,"t":"ないの","k":3},{"r":1,"c":3,"t":"と言い","k":4},{"r":0,"c":2,"t":"ながら","k":5},{"r":2,"c":1,"t":"盃","k":-1},{"r":1,"c":4,"t":"徳利","k":-1}],"init":[1,0,0,0,0,1,1],"target":["裏切","りは","許され","ないの","と言い","ながら"],"n":6,"line":"裏切りは許されないの\nと言いながら","title":"短歌二　上"},{"size":7,"start":1,"mirrors":[{"r":1,"c":2},{"r":3,"c":2},{"r":3,"c":6},{"r":0,"c":6},{"r":4,"c":4},{"r":2,"c":5},{"r":5,"c":6},{"r":5,"c":3},{"r":1,"c":3}],"words":[{"r":1,"c":0,"t":"交わす","k":0},{"r":1,"c":1,"t":"グラス","k":1},{"r":3,"c":3,"t":"の音","k":2},{"r":3,"c":5,"t":"ぞ","k":3},{"r":2,"c":6,"t":"哀し","k":4},{"r":1,"c":6,"t":"き","k":5},{"r":6,"c":0,"t":"酒","k":-1},{"r":0,"c":5,"t":"泡","k":-1},{"r":1,"c":4,"t":"氷","k":-1}],"init":[0,0,1,0,0,0,1,0,1],"target":["交わす","グラス","の音","ぞ","哀し","き"],"n":6,"line":"交わすグラスの音ぞ哀しき","title":"短歌二　下"},{"size":7,"start":0,"mirrors":[{"r":0,"c":2},{"r":2,"c":2},{"r":2,"c":4},{"r":4,"c":4},{"r":4,"c":1},{"r":6,"c":1},{"r":3,"c":6},{"r":4,"c":6},{"r":0,"c":6},{"r":1,"c":3},{"r":0,"c":4}],"words":[{"r":0,"c":0,"t":"もう","k":0},{"r":1,"c":2,"t":"何を","k":1},{"r":3,"c":4,"t":"飲んだ","k":2},{"r":4,"c":3,"t":"か","k":3},{"r":4,"c":2,"t":"なんて","k":4},{"r":5,"c":1,"t":"忘れ","k":5},{"r":6,"c":0,"t":"たわ","k":6},{"r":6,"c":3,"t":"酔い","k":-1},{"r":1,"c":0,"t":"琥珀","k":-1},{"r":2,"c":6,"t":"忘却","k":-1}],"init":[1,1,0,0,1,1,0,0,1,0,0],"target":["もう","何を","飲んだ","か","なんて","忘れ","たわ"],"n":7,"line":"もう何を飲んだかなんて\n忘れたわ","title":"短歌三　上"},{"size":6,"start":0,"mirrors":[{"r":0,"c":1},{"r":2,"c":1},{"r":2,"c":5},{"r":5,"c":4},{"r":0,"c":2},{"r":4,"c":4},{"r":3,"c":4}],"words":[{"r":1,"c":1,"t":"明日の","k":0},{"r":2,"c":2,"t":"岸辺に","k":1},{"r":2,"c":3,"t":"そっと","k":2},{"r":2,"c":4,"t":"寄り","k":3},{"r":5,"c":5,"t":"添う","k":4},{"r":5,"c":2,"t":"岸","k":-1},{"r":2,"c":0,"t":"波","k":-1}],"init":[0,0,0,1,0,0,1],"target":["明日の","岸辺に","そっと","寄り","添う"],"n":5,"line":"明日の岸辺にそっと寄り添う","title":"短歌三　下"},{"size":7,"start":0,"mirrors":[{"r":0,"c":3},{"r":4,"c":3},{"r":4,"c":5},{"r":0,"c":5},{"r":1,"c":6},{"r":3,"c":0},{"r":2,"c":2},{"r":1,"c":4},{"r":4,"c":0}],"words":[{"r":0,"c":2,"t":"これ","k":0},{"r":1,"c":3,"t":"までも","k":1},{"r":2,"c":3,"t":"これ","k":2},{"r":4,"c":4,"t":"からも","k":3},{"r":3,"c":5,"t":"君は","k":4},{"r":1,"c":5,"t":"僕の","k":5},{"r":0,"c":6,"t":"こと","k":6},{"r":2,"c":0,"t":"酒","k":-1},{"r":5,"c":3,"t":"一献","k":-1},{"r":1,"c":1,"t":"氷","k":-1}],"init":[0,0,1,1,0,0,1,1,1],"target":["これ","までも","これ","からも","君は","僕の","こと"],"n":7,"line":"これまでも\nこれからも君は僕のこと","title":"返歌　上"},{"size":7,"start":5,"mirrors":[{"r":5,"c":1},{"r":2,"c":1},{"r":2,"c":4},{"r":0,"c":4},{"r":4,"c":3},{"r":3,"c":6},{"r":1,"c":5},{"r":0,"c":2},{"r":6,"c":0},{"r":1,"c":6}],"words":[{"r":5,"c":0,"t":"愛して","k":0},{"r":4,"c":1,"t":"は","k":1},{"r":3,"c":1,"t":"いない","k":2},{"r":2,"c":2,"t":"それを","k":3},{"r":2,"c":3,"t":"知ら","k":4},{"r":1,"c":4,"t":"ない","k":5},{"r":1,"c":3,"t":"酒","k":-1},{"r":0,"c":1,"t":"酔い","k":-1},{"r":2,"c":0,"t":"徳利","k":-1},{"r":5,"c":4,"t":"泡","k":-1}],"init":[1,1,1,0,1,0,1,0,1,1],"target":["愛して","は","いない","それを","知ら","ない"],"n":6,"line":"愛してはいない\nそれを知らない","title":"返歌　下"}];
+const LEVELS=[{"size":5,"start":3,"mirrors":[{"r":3,"c":2},{"r":1,"c":2},{"r":3,"c":3},{"r":1,"c":1}],"words":[{"r":3,"c":0,"t":"光が","k":0},{"r":3,"c":1,"t":"言葉に","k":1},{"r":2,"c":2,"t":"なる","k":2},{"r":4,"c":1,"t":"酒","k":-1}],"init":[0,1,0,0],"target":["光が","言葉に","なる"],"n":3,"line":"光が言葉になる。","title":"序","minCost":0,"cups":9},{"size":6,"start":0,"mirrors":[{"r":0,"c":3},{"r":4,"c":3},{"r":4,"c":1},{"r":5,"c":0},{"r":5,"c":2},{"r":2,"c":4}],"words":[{"r":0,"c":1,"t":"お酒","k":0},{"r":0,"c":2,"t":"だけ","k":1},{"r":1,"c":3,"t":"信じて","k":2},{"r":3,"c":3,"t":"生きて","k":3},{"r":4,"c":2,"t":"来た","k":4},{"r":5,"c":1,"t":"のです","k":5},{"r":3,"c":2,"t":"酒","k":-1},{"r":1,"c":4,"t":"盃","k":-1}],"init":[0,0,1,0,0,0],"target":["お酒","だけ","信じて","生きて","来た","のです"],"n":6,"line":"お酒だけ\n信じて生きて来たのです","title":"短歌一　上","minCost":0,"cups":7},{"size":6,"start":0,"mirrors":[{"r":0,"c":2},{"r":3,"c":2},{"r":3,"c":0},{"r":3,"c":5},{"r":5,"c":2},{"r":1,"c":5}],"words":[{"r":0,"c":0,"t":"いま","k":0},{"r":0,"c":1,"t":"さら","k":1},{"r":2,"c":2,"t":"何を","k":2},{"r":3,"c":1,"t":"信じ","k":3},{"r":4,"c":0,"t":"たら","k":4},{"r":5,"c":0,"t":"いいの","k":5},{"r":1,"c":4,"t":"酔い","k":-1},{"r":4,"c":5,"t":"一献","k":-1}],"init":[0,1,0,1,0,0],"target":["いま","さら","何を","信じ","たら","いいの"],"n":6,"line":"いまさら何を信じたらいいの","title":"短歌一　下","minCost":0,"cups":7},{"size":6,"start":4,"mirrors":[{"r":4,"c":3},{"r":0,"c":3},{"r":0,"c":1},{"r":0,"c":4},{"r":3,"c":2},{"r":4,"c":4},{"r":2,"c":0}],"words":[{"r":4,"c":0,"t":"裏切","k":0},{"r":4,"c":1,"t":"りは","k":1},{"r":4,"c":2,"t":"許され","k":2},{"r":3,"c":3,"t":"ないの","k":3},{"r":1,"c":3,"t":"と言い","k":4},{"r":0,"c":2,"t":"ながら","k":5},{"r":2,"c":1,"t":"盃","k":-1},{"r":1,"c":4,"t":"徳利","k":-1}],"init":[1,0,0,0,0,1,1],"target":["裏切","りは","許され","ないの","と言い","ながら"],"n":6,"line":"裏切りは許されないの\nと言いながら","title":"短歌二　上","minCost":0,"cups":7},{"size":7,"start":1,"mirrors":[{"r":1,"c":2},{"r":3,"c":2},{"r":3,"c":6},{"r":0,"c":6},{"r":4,"c":4},{"r":2,"c":5},{"r":5,"c":6},{"r":5,"c":3},{"r":1,"c":3}],"words":[{"r":1,"c":0,"t":"交わす","k":0},{"r":1,"c":1,"t":"グラス","k":1},{"r":3,"c":3,"t":"の音","k":2},{"r":3,"c":5,"t":"ぞ","k":3},{"r":2,"c":6,"t":"哀し","k":4},{"r":1,"c":6,"t":"き","k":5},{"r":6,"c":0,"t":"酒","k":-1},{"r":0,"c":5,"t":"泡","k":-1},{"r":1,"c":4,"t":"氷","k":-1}],"init":[0,0,1,0,0,0,1,0,1],"target":["交わす","グラス","の音","ぞ","哀し","き"],"n":6,"line":"交わすグラスの音ぞ哀しき","title":"短歌二　下","minCost":0,"cups":7},{"size":7,"start":0,"mirrors":[{"r":0,"c":2},{"r":2,"c":2},{"r":2,"c":4},{"r":4,"c":4},{"r":4,"c":1},{"r":6,"c":1},{"r":3,"c":6},{"r":4,"c":6},{"r":0,"c":6},{"r":1,"c":3},{"r":0,"c":4}],"words":[{"r":0,"c":0,"t":"もう","k":0},{"r":1,"c":2,"t":"何を","k":1},{"r":3,"c":4,"t":"飲んだ","k":2},{"r":4,"c":3,"t":"か","k":3},{"r":4,"c":2,"t":"なんて","k":4},{"r":5,"c":1,"t":"忘れ","k":5},{"r":6,"c":0,"t":"たわ","k":6},{"r":6,"c":3,"t":"酔い","k":-1},{"r":1,"c":0,"t":"琥珀","k":-1},{"r":2,"c":6,"t":"忘却","k":-1}],"init":[1,1,0,0,1,1,0,0,1,0,0],"target":["もう","何を","飲んだ","か","なんて","忘れ","たわ"],"n":7,"line":"もう何を飲んだかなんて\n忘れたわ","title":"短歌三　上","minCost":0,"cups":7},{"size":6,"start":0,"mirrors":[{"r":0,"c":1},{"r":2,"c":1},{"r":2,"c":5},{"r":5,"c":4},{"r":0,"c":2},{"r":4,"c":4},{"r":3,"c":4}],"words":[{"r":1,"c":1,"t":"明日の","k":0},{"r":2,"c":2,"t":"岸辺に","k":1},{"r":2,"c":3,"t":"そっと","k":2},{"r":2,"c":4,"t":"寄り","k":3},{"r":5,"c":5,"t":"添う","k":4},{"r":5,"c":2,"t":"岸","k":-1},{"r":2,"c":0,"t":"波","k":-1}],"init":[0,0,0,1,0,0,1],"target":["明日の","岸辺に","そっと","寄り","添う"],"n":5,"line":"明日の岸辺にそっと寄り添う","title":"短歌三　下","minCost":0,"cups":7},{"size":7,"start":0,"mirrors":[{"r":0,"c":3},{"r":4,"c":3},{"r":4,"c":5},{"r":0,"c":5},{"r":1,"c":6},{"r":3,"c":0},{"r":2,"c":2},{"r":1,"c":4},{"r":4,"c":0}],"words":[{"r":0,"c":2,"t":"これ","k":0},{"r":1,"c":3,"t":"までも","k":1},{"r":2,"c":3,"t":"これ","k":2},{"r":4,"c":4,"t":"からも","k":3},{"r":3,"c":5,"t":"君は","k":4},{"r":1,"c":5,"t":"僕の","k":5},{"r":0,"c":6,"t":"こと","k":6},{"r":2,"c":0,"t":"酒","k":-1},{"r":5,"c":3,"t":"一献","k":-1},{"r":1,"c":1,"t":"氷","k":-1}],"init":[0,0,1,1,0,0,1,1,1],"target":["これ","までも","これ","からも","君は","僕の","こと"],"n":7,"line":"これまでも\nこれからも君は僕のこと","title":"返歌　上","minCost":0,"cups":7},{"size":7,"start":5,"mirrors":[{"r":5,"c":1},{"r":2,"c":1},{"r":2,"c":4},{"r":0,"c":4},{"r":4,"c":3},{"r":3,"c":6},{"r":1,"c":5},{"r":0,"c":2},{"r":6,"c":0},{"r":1,"c":6}],"words":[{"r":5,"c":0,"t":"愛して","k":0},{"r":4,"c":1,"t":"は","k":1},{"r":3,"c":1,"t":"いない","k":2},{"r":2,"c":2,"t":"それを","k":3},{"r":2,"c":3,"t":"知ら","k":4},{"r":1,"c":4,"t":"ない","k":5},{"r":1,"c":3,"t":"酒","k":-1},{"r":0,"c":1,"t":"酔い","k":-1},{"r":2,"c":0,"t":"徳利","k":-1},{"r":5,"c":4,"t":"泡","k":-1}],"init":[1,1,1,0,1,0,1,0,1,1],"target":["愛して","は","いない","それを","知ら","ない"],"n":6,"line":"愛してはいない\nそれを知らない","title":"返歌　下","minCost":0,"cups":7}];
 const DIRS={R:[0,1],L:[0,-1],U:[-1,0],D:[1,0]};
 const SLASH={R:'U',U:'R',L:'D',D:'L'};
 const BACK={R:'D',D:'R',L:'U',U:'L'};
@@ -175,7 +194,7 @@ const NS='http://www.w3.org/2000/svg';
 const $=id=>document.getElementById(id);
 const svg=$('svg');
 const W=560;
-let cur=0,cell=0,states=[],angles=[],solved=false,prevGot=[],unlocked=0;
+let cur=0,cell=0,states=[],angles=[],solved=false,prevGot=[],unlocked=0,drunk=0,over=false,lastWrong=false;
 let beamEl,flowEl,mirEls=[],wordEls=[];
 const LABELS=['序','一','二','三','四','五','六','七','八'];
 try{unlocked=Math.min(LEVELS.length-1,parseInt(localStorage.getItem('hansha_tanka_unlocked')||'0',10)||0);}catch(e){}
@@ -206,7 +225,8 @@ function build(){
   cell=W/S;
   states=lv.init.slice();
   angles=states.map(s=>s===0?-45:45);
-  solved=false;prevGot=[];
+  solved=false;prevGot=[];drunk=0;over=false;lastWrong=false;
+  $('over').hidden=true;$('over').classList.remove('show');document.querySelector('.board').classList.remove('over');
   svg.innerHTML='';
   svg.setAttribute('viewBox',`-34 -14 ${W+68} ${W+28}`);
   const gGrid=el('g',{},svg);
@@ -251,13 +271,47 @@ function build(){
   $('lvTitle').textContent=lv.title;
   $('clear').hidden=true;$('clear').classList.remove('show');
   buildDots();
+  renderPips();
   update();
 }
 
+function renderPips(){
+  const lv=LEVELS[cur];
+  const pips=$('pips');pips.innerHTML='';
+  for(let i=0;i<lv.cups;i++){
+    const s=document.createElement('span');s.className='pip'+(i<drunk?' full':'');pips.appendChild(s);
+  }
+  $('gauge').setAttribute('aria-label','酔い '+drunk+' / '+lv.cups);
+}
+
 function toggle(i){
-  if(solved)return;
+  if(solved||over)return;
   states[i]^=1;angles[i]+=90;
   mirEls[i].style.transform=`rotate(${angles[i]}deg)`;
+  update();
+  if(!solved&&lastWrong){
+    drunk++;renderPips();
+    if(drunk>=LEVELS[cur].cups)gameOver();
+  }
+}
+
+function gameOver(){
+  over=true;
+  document.querySelector('.board').classList.remove('sway');
+  document.querySelector('.board').classList.add('over');
+  setTimeout(()=>{
+    const o=$('over');o.hidden=false;o.classList.remove('show');void o.offsetWidth;o.classList.add('show');
+  },500);
+}
+
+function retry(){
+  const lv=LEVELS[cur];
+  states=lv.init.slice();angles=states.map(s=>s===0?-45:45);
+  mirEls.forEach((r,i)=>r.style.transform=`rotate(${angles[i]}deg)`);
+  drunk=0;over=false;
+  $('over').hidden=true;$('over').classList.remove('show');
+  document.querySelector('.board').classList.remove('over');
+  renderPips();
   update();
 }
 
@@ -300,7 +354,8 @@ function update(){
     }else{s.textContent='◇';s.className='blank';}
     line.appendChild(s);
   }
-  document.querySelector('.board').classList.toggle('sway',res.got.some((wi,k)=>lv.words[wi].k!==k));
+  lastWrong=res.got.some((wi,k)=>lv.words[wi].k!==k);
+  if(!over)document.querySelector('.board').classList.toggle('sway',lastWrong);
   // solved?
   if(!solved&&res.got.length===n&&res.got.every((wi,k)=>lv.words[wi].k===k)){
     solved=true;
@@ -315,7 +370,7 @@ function update(){
 }
 
 function hint(){
-  if(solved)return;
+  if(solved||over)return;
   const lv=LEVELS[cur];
   const res=sim(lv,states);
   let k=0;
@@ -348,8 +403,9 @@ function showEnding(){
 }
 
 $('hint').onclick=hint;
+$('retry').onclick=retry;
 $('reset').onclick=()=>{
-  if(solved)return;
+  if(solved||over)return;
   const lv=LEVELS[cur];
   states=lv.init.slice();angles=states.map(s=>s===0?-45:45);
   mirEls.forEach((r,i)=>r.style.transform=`rotate(${angles[i]}deg)`);
